@@ -5,11 +5,14 @@ import org.example.customerprovincemanagement.model.Province;
 import org.example.customerprovincemanagement.service.ICustomerService;
 import org.example.customerprovincemanagement.service.IProvinceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 
 @Controller
@@ -26,13 +29,29 @@ public class CustomerController {
         return provinceService.findAll();
     }
 
-    @GetMapping
-    public ModelAndView listCustomer() {
+    @GetMapping("")
+    public ModelAndView listCustomers(@RequestParam(value = "page", defaultValue = "0") int page){
+        Pageable pageable = PageRequest.of(page, 5);
+        Page<Customer> customers = customerService.findAll(pageable);
         ModelAndView modelAndView = new ModelAndView("/customer/list");
-        Iterable<Customer> customers = customerService.findAll();
         modelAndView.addObject("customers", customers);
         return modelAndView;
     }
+
+    @GetMapping("/search")
+    public ModelAndView listCustomers(@RequestParam("search") Optional<String> search, @RequestParam(value = "page", defaultValue = "0") int page){
+        Pageable pageable = PageRequest.of(page, 5);
+        Page<Customer> customers;
+        if(search.isPresent()){
+            customers = customerService.findAllByFirstNameContaining(pageable, search.get());
+        } else {
+            customers = customerService.findAll(pageable);
+        }
+        ModelAndView modelAndView = new ModelAndView("/customer/list");
+        modelAndView.addObject("customers", customers);
+        return modelAndView;
+    }
+
 
     @GetMapping("/create")
     public ModelAndView createForm() {
